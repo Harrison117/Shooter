@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Shooter</string>
+    <string name="hideCamera">Hide Camera</string>
+    <string name="showCamera">Show Camera</string>
+    <string name="takePhoto">Take Photo</string>
+    <string name="scanOn">Stop Scan</string>
+    <string name="scanOff">Start Scan</string>
+</resources>

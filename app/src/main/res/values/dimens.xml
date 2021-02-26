@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="relative_width" type="dimen">100%</item>
+    <item name="half" type="dimen">50%</item>
+</resources>
