@@ -1,7 +1,5 @@
 package com.example.shooterapp.fragment
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.util.Size
@@ -9,25 +7,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
 import android.widget.ToggleButton
-import androidx.activity.viewModels
+
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import com.example.shooterapp.MainActivity
+import androidx.navigation.Navigation
+
 import com.example.shooterapp.R
 import com.example.shooterapp.analyzer.ComponentAnalyzer
 import com.example.shooterapp.databinding.CameraFragmentBinding
 import com.example.shooterapp.util.Prediction
 import com.example.shooterapp.util.PredictionViewModel
+
 import com.google.common.util.concurrent.ListenableFuture
+
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -43,16 +42,12 @@ class CameraFragment: Fragment() {
     private var isCameraActive = false
 
     private lateinit var camera: Camera
-    private val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> by lazy {
-        ProcessCameraProvider.getInstance(requireContext())
-    }
+    private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
 
     private var preview: Preview? = null
     private lateinit var imageAnalysis: ImageAnalysis
 
-    private val cameraExecutor: ExecutorService by lazy {
-        Executors.newSingleThreadExecutor()
-    }
+    private lateinit var cameraExecutor: ExecutorService
 
     private val predictViewModel: PredictionViewModel by viewModels()
     private lateinit var predictionObserver: Observer<Prediction>
@@ -65,7 +60,6 @@ class CameraFragment: Fragment() {
 
         binding = DataBindingUtil.inflate(inflater, R.layout.camera_fragment, container, false)
 
-
         previewView = binding.previewView
         btnToggleMode = binding.cameraViewToggle
         btnToggleScan = binding.scanToggle
@@ -73,12 +67,27 @@ class CameraFragment: Fragment() {
 
         isScanActive = btnToggleScan.isChecked
 
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
         predictionObserver = Observer { result ->
             predictionResult.text = result.label
             Log.d(TAG, "TextView Value: ${predictionResult.text}")
         }
+    }
 
-        return binding.root
+    override fun onResume() {
+        super.onResume()
+        if(!PermissionsFragment.allPermissionsGranted(requireContext())){
+            Navigation
+                .findNavController(requireActivity(), R.id.fragment_container)
+                .navigate(R.id.action_cameraFragment_to_permissionsFragment)
+        }
     }
 
     override fun onDestroyView() {
@@ -92,8 +101,8 @@ class CameraFragment: Fragment() {
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
             .build()
 
+        cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
         cameraProviderFuture.addListener( Runnable{
-
             preview = buildPreviewUseCase()
 
             if (isScanActive)
@@ -102,10 +111,10 @@ class CameraFragment: Fragment() {
             // used to bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
-            try {
-                // unbind use cases before rebinding
-                cameraProvider.unbindAll()
+            // unbind use cases before rebinding
+            cameraProvider.unbindAll()
 
+            try {
                 // bind use cases to camera
                 camera = when(isScanActive) {
                     false -> cameraProvider.bindToLifecycle(this, cameraSelector, preview)
@@ -113,7 +122,7 @@ class CameraFragment: Fragment() {
                 }
                 preview?.setSurfaceProvider(binding.previewView.surfaceProvider)
             } catch(exc: IllegalArgumentException) {
-                Log.d(TAG, "Use case binding failed: unable to resolve camera selection/use cases not declared", exc)
+                Log.d(TAG, "Use case binding failed: unable to resolve camera selection/use cases", exc)
             } catch(exc: Exception) {
                 Log.d(TAG, "Use case binding failed: unknown error", exc)
             }

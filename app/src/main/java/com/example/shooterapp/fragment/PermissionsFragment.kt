@@ -5,24 +5,55 @@ import android.os.Bundle
 import android.Manifest
 import android.content.Context
 
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.Navigation
+import com.example.shooterapp.R
 
 class PermissionsFragment: Fragment() {
+
+    private var isAllPermissionGranted = false
+    private val cameraPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()) { requestPermissionGranted ->
+        when {
+            requestPermissionGranted or isAllPermissionGranted -> {
+                Navigation
+                    .findNavController(requireActivity(), R.id.fragment_container)
+                    .navigate(R.id.action_permissionsFragment_to_cameraFragment)
+                // todo: proceed to camera fragment
+            }
+
+            shouldShowRequestPermissionRationale(CAMERA_PERMISSION) -> {
+                // todo: request permission again, explaining why you need the camera
+                isAllPermissionGranted = false
+            }
+
+            else -> {
+                // todo: request permissions again
+                isAllPermissionGranted = false
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if(!allPermissionsGranted(requireContext())) {
+        // todo: pass arguments to next fragment
+        isAllPermissionGranted = allPermissionsGranted(requireContext())
+    }
 
-        }
+    override fun onResume() {
+        super.onResume()
+        cameraPermission.launch(CAMERA_PERMISSION)
     }
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+        private const val CAMERA_PERMISSION = Manifest.permission.CAMERA
 
-        private fun allPermissionsGranted(context: Context) = REQUIRED_PERMISSIONS.all {
+        fun allPermissionsGranted(context: Context) = REQUIRED_PERMISSIONS.all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
     }
