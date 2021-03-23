@@ -21,7 +21,7 @@ import androidx.navigation.Navigation
 
 import com.example.shooterapp.R
 import com.example.shooterapp.analyzer.ComponentAnalyzer
-import com.example.shooterapp.databinding.CameraFragmentBinding
+import com.example.shooterapp.databinding.FragmentCameraBinding
 import com.example.shooterapp.util.Prediction
 import com.example.shooterapp.util.PredictionViewModel
 
@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class CameraFragment: Fragment() {
-    private lateinit var binding: CameraFragmentBinding
+    private lateinit var binding: FragmentCameraBinding
 
     private lateinit var previewView: PreviewView
     private lateinit var btnToggleMode: ToggleButton
@@ -58,7 +58,7 @@ class CameraFragment: Fragment() {
         savedInstanceState: Bundle?
     ): View? {
 
-        binding = DataBindingUtil.inflate(inflater, R.layout.camera_fragment, container, false)
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_camera, container, false)
 
         previewView = binding.previewView
         btnToggleMode = binding.cameraViewToggle
@@ -79,20 +79,22 @@ class CameraFragment: Fragment() {
             predictionResult.text = result.label
             Log.d(TAG, "TextView Value: ${predictionResult.text}")
         }
+
+        // startCamera()
     }
 
     override fun onResume() {
         super.onResume()
         if(!PermissionsFragment.allPermissionsGranted(requireContext())){
             Navigation
-                .findNavController(requireActivity(), R.id.fragment_container)
+                .findNavController(requireActivity(), R.id.nav_container)
                 .navigate(R.id.action_cameraFragment_to_permissionsFragment)
         }
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
         stopCamera()
+        super.onDestroyView()
     }
 
     private fun startCamera() {

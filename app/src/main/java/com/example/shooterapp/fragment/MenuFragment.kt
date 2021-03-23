@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import com.example.shooterapp.R
-import com.example.shooterapp.databinding.MenuFragmentBinding
+import com.example.shooterapp.databinding.FragmentMenuBinding
 
 class MenuFragment: Fragment() {
     override fun onCreateView(
@@ -15,7 +15,7 @@ class MenuFragment: Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val binding: MenuFragmentBinding = DataBindingUtil.inflate(inflater, R.layout.menu_fragment, container, false)
+        val binding = DataBindingUtil.inflate<FragmentMenuBinding>(inflater, R.layout.fragment_menu, container, false)
 
         return binding.root
     }

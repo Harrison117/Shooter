@@ -21,6 +21,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
+import androidx.navigation.findNavController
+import androidx.navigation.ui.NavigationUI
 import com.google.common.util.concurrent.ListenableFuture
 
 import java.util.concurrent.ExecutorService
@@ -39,6 +41,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = DataBindingUtil
             .setContentView(this, R.layout.activity_main) as ActivityMainBinding
+
+        val navController = this.findNavController(R.id.nav_container)
+        NavigationUI.setupActionBarWithNavController(this, navController)
     }
 
     companion object {

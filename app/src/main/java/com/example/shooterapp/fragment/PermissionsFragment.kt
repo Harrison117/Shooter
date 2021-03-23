@@ -17,9 +17,9 @@ class PermissionsFragment: Fragment() {
     private val cameraPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()) { requestPermissionGranted ->
         when {
-            requestPermissionGranted or isAllPermissionGranted -> {
+            requestPermissionGranted || isAllPermissionGranted -> {
                 Navigation
-                    .findNavController(requireActivity(), R.id.fragment_container)
+                    .findNavController(requireActivity(), R.id.nav_container)
                     .navigate(R.id.action_permissionsFragment_to_cameraFragment)
                 // todo: proceed to camera fragment
             }
