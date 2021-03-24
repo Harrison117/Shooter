@@ -16,7 +16,6 @@ import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
 import androidx.navigation.Navigation
 
 import com.example.shooterapp.R
@@ -34,12 +33,9 @@ class CameraFragment: Fragment() {
     private lateinit var binding: FragmentCameraBinding
 
     private lateinit var previewView: PreviewView
-    private lateinit var btnToggleMode: ToggleButton
     private lateinit var btnToggleScan: ToggleButton
     private lateinit var predictionResult: TextView
 
-    private var isScanActive = false
-    private var isCameraActive = false
 
     private lateinit var camera: Camera
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
@@ -50,7 +46,6 @@ class CameraFragment: Fragment() {
     private lateinit var cameraExecutor: ExecutorService
 
     private val predictViewModel: PredictionViewModel by viewModels()
-    private lateinit var predictionObserver: Observer<Prediction>
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -60,12 +55,12 @@ class CameraFragment: Fragment() {
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_camera, container, false)
 
+        binding.predict = predictViewModel
+        binding.lifecycleOwner = this
+
         previewView = binding.previewView
-        btnToggleMode = binding.cameraViewToggle
         btnToggleScan = binding.scanToggle
         predictionResult = binding.predictTextView
-
-        isScanActive = btnToggleScan.isChecked
 
         return binding.root
     }
@@ -74,13 +69,7 @@ class CameraFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
-
-        predictionObserver = Observer { result ->
-            predictionResult.text = result.label
-            Log.d(TAG, "TextView Value: ${predictionResult.text}")
-        }
-
-        // startCamera()
+        startCamera()
     }
 
     override fun onResume() {
@@ -88,7 +77,7 @@ class CameraFragment: Fragment() {
         if(!PermissionsFragment.allPermissionsGranted(requireContext())){
             Navigation
                 .findNavController(requireActivity(), R.id.nav_container)
-                .navigate(R.id.action_cameraFragment_to_permissionsFragment)
+                .navigate(CameraFragmentDirections.actionCameraFragmentToPermissionsFragment())
         }
     }
 
@@ -106,9 +95,7 @@ class CameraFragment: Fragment() {
         cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
         cameraProviderFuture.addListener( Runnable{
             preview = buildPreviewUseCase()
-
-            if (isScanActive)
-                imageAnalysis = buildImageAnalysisCase()
+            imageAnalysis = buildImageAnalysisCase()
 
             // used to bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
@@ -118,10 +105,8 @@ class CameraFragment: Fragment() {
 
             try {
                 // bind use cases to camera
-                camera = when(isScanActive) {
-                    false -> cameraProvider.bindToLifecycle(this, cameraSelector, preview)
-                    else -> cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
-                }
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
+
                 preview?.setSurfaceProvider(binding.previewView.surfaceProvider)
             } catch(exc: IllegalArgumentException) {
                 Log.d(TAG, "Use case binding failed: unable to resolve camera selection/use cases", exc)
@@ -131,7 +116,6 @@ class CameraFragment: Fragment() {
 
         }, ContextCompat.getMainExecutor(requireContext()))
 
-        isCameraActive = true
     }
 
     private fun buildPreviewUseCase(): Preview {
@@ -156,30 +140,11 @@ class CameraFragment: Fragment() {
         }
     }
 
-    // on preview show, start up camera again and
-    private fun showPreview(){
-        startCamera()
-        previewView.visibility = View.VISIBLE
-        btnToggleScan.visibility = View.VISIBLE
-        predictionResult.visibility = View.VISIBLE
-        // TODO: once AR component is introduced, change this section of code(2)
-    }
-
-    // on preview hide, shutdown camera features and adjust view layout visibility
-    private fun hidePreview() {
-        stopCamera()
-        previewView.visibility = View.INVISIBLE
-        btnToggleScan.visibility = View.INVISIBLE
-        predictionResult.visibility = View.INVISIBLE
-        // TODO: once AR component is introduced, change this section of code
-    }
-
     private fun stopCamera() {
         cameraExecutor.shutdown()
         cameraProviderFuture
             .get()
             .unbindAll()
-        isCameraActive = false
     }
 
     companion object {

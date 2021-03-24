@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import com.google.common.util.concurrent.ListenableFuture
 
@@ -40,9 +41,11 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "onCreate called!")
         super.onCreate(savedInstanceState)
         val binding = DataBindingUtil
-            .setContentView(this, R.layout.activity_main) as ActivityMainBinding
+            .setContentView<ActivityMainBinding>(this, R.layout.activity_main)
 
-        val navController = this.findNavController(R.id.nav_container)
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_container) as NavHostFragment
+        val navController = navHostFragment.navController
         NavigationUI.setupActionBarWithNavController(this, navController)
     }
 

@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.Manifest
 import android.content.Context
+import android.util.Log
 
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -20,7 +21,7 @@ class PermissionsFragment: Fragment() {
             requestPermissionGranted || isAllPermissionGranted -> {
                 Navigation
                     .findNavController(requireActivity(), R.id.nav_container)
-                    .navigate(R.id.action_permissionsFragment_to_cameraFragment)
+                    .navigate(PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment())
                 // todo: proceed to camera fragment
             }
 
@@ -45,10 +46,12 @@ class PermissionsFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
+        Log.d(TAG, "onResume called!")
         cameraPermission.launch(CAMERA_PERMISSION)
     }
 
     companion object {
+        private const val TAG = "PermissionsFragment"
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
         private const val CAMERA_PERMISSION = Manifest.permission.CAMERA

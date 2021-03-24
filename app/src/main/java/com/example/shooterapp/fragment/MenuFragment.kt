@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.navigation.findNavController
 import com.example.shooterapp.R
 import com.example.shooterapp.databinding.FragmentMenuBinding
 
@@ -17,6 +18,10 @@ class MenuFragment: Fragment() {
     ): View? {
         val binding = DataBindingUtil.inflate<FragmentMenuBinding>(inflater, R.layout.fragment_menu, container, false)
 
+        binding.menuButtonStart.setOnClickListener { view: View ->
+            view.findNavController()
+                    .navigate(MenuFragmentDirections.actionMenuFragmentToPermissionsFragment())
+        }
         return binding.root
     }
 
