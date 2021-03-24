@@ -55,6 +55,10 @@ class CameraFragment: Fragment() {
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_camera, container, false)
 
+        // LiveData in ViewModel class ('prediction' variable) is exposed;
+        // bind the view model into the data variable of the view ('predict' variable).
+        // The view model, together with the view, will automatically respond to the lifecycle of
+        //   the lifecycle owner (CameraFragment). No need for Observers!
         binding.predict = predictViewModel
         binding.lifecycleOwner = this
 
@@ -134,6 +138,7 @@ class CameraFragment: Fragment() {
             // the parameter in setAnalyzer is the value returned from the analyze() function
             //   the custom analyzer class specified
             analysisUseCase.setAnalyzer(cameraExecutor, ComponentAnalyzer(requireContext()){ result: Prediction ->
+                // data will be automatically shown in the view
                 predictViewModel.updateData(result)
                 Log.d(TAG, "Component: $result")
             })
