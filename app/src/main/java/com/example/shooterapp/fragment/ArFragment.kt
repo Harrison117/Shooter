@@ -71,8 +71,6 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
     private var installRequested = false
 
-    private var mode: Mode = Mode.VIKING
-
     private lateinit var surfaceView: GLSurfaceView
     private var session: Session? = null
 
@@ -87,13 +85,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
     private val pointCloudRenderer: PointCloudRenderer = PointCloudRenderer()
 
     // TODO: Declare ObjectRenderers and PlaneAttachments here
-    private val vikingObject = ObjectRenderer()
-    private val cannonObject = ObjectRenderer()
-    private val targetObject = ObjectRenderer()
-
-    private var vikingAttachment: PlaneAttachment? = null
-    private var cannonAttachment: PlaneAttachment? = null
-    private var targetAttachment: PlaneAttachment? = null
+    private var componentObject = ObjectRenderer()
+    private var componentAttachment: PlaneAttachment? = null
 
     // Temporary matrix allocated here to reduce number of allocations and taps for each frame.
     private val maxAllocationSize = 16
@@ -104,10 +97,12 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         val binding = DataBindingUtil.inflate<FragmentArBinding>(inflater, R.layout.fragment_ar, container, false)
         surfaceView = binding.surfaceView
+
+        binding.lifecycleOwner = this
 
         trackingStateHelper = TrackingStateHelper(requireActivity())
         displayRotationHelper = DisplayRotationHelper(requireContext())
@@ -116,18 +111,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
         setupTapDetector()
         setupSurfaceView()
-        return super.onCreateView(inflater, container, savedInstanceState)
+        return binding.root
     }
-
-/*
-    fun onRadioButtonClicked(view: View) {
-        when (view.id) {
-            R.id.radioCannon -> mode = Mode.CANNON
-            R.id.radioTarget -> mode = Mode.TARGET
-            else -> mode = Mode.VIKING
-        }
-    }
-*/
 
     private fun setupSurfaceView() {
         // Set up renderer.
@@ -161,6 +146,7 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
     private fun onSingleTap(e: MotionEvent) {
         // Queue tap if there is space. Tap is lost if queue is full.
         queuedSingleTaps.offer(e)
+        Log.d(TAG, "Single tap queued!")
     }
 
     override fun onResume() {
@@ -251,6 +237,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f)
+        lateinit var modelObjectName: String
+        lateinit var modelObjectImageName: String
 
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
@@ -259,18 +247,38 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             planeRenderer.createOnGlThread(requireContext(), getString(R.string.model_grid_png))
             pointCloudRenderer.createOnGlThread(requireContext())
 
-            // TODO - set up the objects
-/*
-            vikingObject.createOnGlThread(requireContext(), getString(R.string.model_viking_obj), getString(R.string.model_viking_png))
-            cannonObject.createOnGlThread(requireContext(), getString(R.string.model_cannon_obj), getString(R.string.model_cannon_png))
-            targetObject.createOnGlThread(requireContext(), getString(R.string.model_target_obj), getString(R.string.model_target_png))
+            // TODO - set up object
+            val testString = "power"
+            when (testString/*arguments.component.toString()*/) {
+                "power" -> {
+                    modelObjectName = getString(R.string.model_power_obj)
+                    modelObjectImageName = getString(R.string.model_power_png)
+                }
+                "mboard" -> {
+                    modelObjectName = getString(R.string.model_mboard_obj)
+                    modelObjectImageName = getString(R.string.model_mboard_png)
+                }
+                "hdrive" -> {
+                    modelObjectName = getString(R.string.model_hdrive_obj)
+                    modelObjectImageName = getString(R.string.model_hdrive_png)
+                }
+                "cpu" -> {
+                    modelObjectName = getString(R.string.model_cpu_obj)
+                    modelObjectImageName = getString(R.string.model_cpu_png)
+                }
+                // DEBUG
+                else -> {
+                    modelObjectName = getString(R.string.model_power_obj)
+                    modelObjectImageName = getString(R.string.model_power_png)
+                }
+            }
+            componentObject.createOnGlThread(requireContext(), modelObjectName, modelObjectImageName)
+            componentObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
 
-            vikingObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
-            cannonObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
-            targetObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
-*/
         } catch (e: IOException) {
             Log.e(TAG, getString(R.string.failed_to_read_asset), e)
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "Context returns Null", e)
         }
     }
 
@@ -311,33 +319,17 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
                 checkPlaneDetected()
                 visualizePlanes(camera, projectionMatrix)
 
-                // TODO: Call drawObject() for Viking, Cannon and Target here
+                // TODO: Call drawObject()
                 /*
                 drawObject(
-                    vikingObject,
-                    vikingAttachment,
-                    Mode.VIKING.scaleFactor,
+                    componentObject,
+                    componentAttachment,
+                    1.0f,
                     projectionMatrix,
                     viewMatrix,
-                    lightIntensity
-                )
-                drawObject(
-                    cannonObject,
-                    cannonAttachment,
-                    Mode.CANNON.scaleFactor,
-                    projectionMatrix,
-                    viewMatrix,
-                    lightIntensity
-                )
-                drawObject(
-                    targetObject,
-                    targetAttachment,
-                    Mode.TARGET.scaleFactor,
-                    projectionMatrix,
-                    viewMatrix,
-                    lightIntensity
-                )
-*/
+                    lightIntensity)
+                */
+
             } catch (t: Throwable) {
                 Log.e(TAG, getString(R.string.exception_on_opengl), t)
             }
@@ -475,13 +467,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
                 ) {
                     // TODO: Create an anchor if a plane or an oriented point was hit
                     // get component string arg passed from camera fragment, add anchor based on component attachment
-                    /*
-                    when (mode) {
-                        Mode.VIKING -> vikingAttachment = addSessionAnchorFromAttachment(vikingAttachment, hit)
-                        Mode.CANNON -> cannonAttachment = addSessionAnchorFromAttachment(cannonAttachment, hit)
-                        Mode.TARGET -> targetAttachment = addSessionAnchorFromAttachment(targetAttachment, hit)
-                    }
-                    */
+
+                    componentAttachment = addSessionAnchorFromAttachment(componentAttachment, hit)
                     break
                 }
             }

@@ -17,15 +17,20 @@
     <string name="arcore_not_supported">This device does not support AR</string>
     <string name="failed_to_create_session">Failed to create AR session</string>
     <string name="camera_permission_needed">Camera permission is needed to run this application</string>
+
     <string name="model_grid_png">models/trigrid.png</string>
-    <string name="model_viking_obj">models/viking.obj</string>
-    <string name="model_viking_png">models/viking.png</string>
-    <string name="model_cannon_obj">models/cannon.obj</string>
-    <string name="model_target_obj">models/target.obj</string>
-    <string name="model_cannon_png">models/cannon.png</string>
-    <string name="model_target_png">models/target.png</string>
+    <string name="model_cpu_obj">models/cpu.obj</string>
+    <string name="model_cpu_png">models/cpu.png</string>
+    <string name="model_hdrive_obj">models/hdrive.obj</string>
+    <string name="model_hdrive_png">models/hdrive.png</string>
+    <string name="model_mboard_obj">models/mboard.obj</string>
+    <string name="model_mboard_png">models/mboard.png</string>
+    <string name="model_power_obj">models/power.obj</string>
+    <string name="model_power_png">models/power.png</string>
+
     <string name="failed_to_read_asset">Failed to read an asset file</string>
     <string name="exception_on_opengl">Exception on the OpenGL thread</string>
+
     <string name="app_menu_title">CPLeA</string>
     <string name="app_menu_subtitle">Computer Part Learning Aide Using Convolutional Neural Network and Augmented Reality</string>
     <string name="button_start">Start</string>
