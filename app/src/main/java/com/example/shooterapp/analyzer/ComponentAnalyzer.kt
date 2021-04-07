@@ -8,7 +8,6 @@ import androidx.camera.core.ImageProxy
 import com.example.shooterapp.util.Prediction
 import org.tensorflow.lite.support.image.TensorImage
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 
 import com.example.shooterapp.util.YuvToRgbConverter
 import org.tensorflow.lite.DataType
@@ -21,22 +20,20 @@ import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.support.label.TensorLabel
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 
 typealias  ResultListener = (Prediction) -> Unit
 
 class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : ImageAnalysis.Analyzer {
 
-    private final val INPUT_SIZE = intArrayOf(1, 150, 150, 3)
-    private final val labelList = arrayListOf("power","mboard","hdrive","cpu")
+    private val labelList = arrayListOf("power","mboard","hdrive","cpu")
 
     private val yuvToRgbConverter = YuvToRgbConverter(ctx)
 
     private val componentModel: ComponentModel by lazy{
 
-        // TODO 6. Optional GPU acceleration
         val compatList = CompatibilityList()
 
+        // Optional GPU acceleration
         val options = if(compatList.isDelegateSupportedOnThisDevice) {
             Log.d(TAG, "This device is GPU Compatible ")
             Model.Options.Builder().setDevice(Model.Device.GPU).build()

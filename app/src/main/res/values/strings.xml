@@ -1,8 +1,37 @@
 <resources>
     <string name="app_name">Shooter</string>
-    <string name="hideCamera">Hide Camera</string>
-    <string name="showCamera">Show Camera</string>
-    <string name="takePhoto">Take Photo</string>
-    <string name="scanOn">Stop Scan</string>
-    <string name="scanOff">Start Scan</string>
+
+    <string name="camera_permission_toast">Camera permission is needed to run this application</string>
+    <string name="searching_for_surfaces">Searching for surfaces…</string>
+    <string name="ar_device_support">This device does not support AR</string>
+    <string name="camera_not_available">Camera not available. Try restarting the app.</string>
+    <string name="arcore_install_failed">Unexpected failure during ArCoreApk install request</string>
+    <string name="please_install_arcore">Please install ARCore</string>
+    <string name="please_update_arcore">Please update ARCore</string>
+    <string name="please_update_app">Please update this app</string>
+    <string name="arcore_not_supported">This device does not support AR</string>
+    <string name="failed_to_create_session">Failed to create AR session</string>
+    <string name="camera_permission_needed">Camera permission is needed to run this application</string>
+    <string name="move_while_focused">Move camera around while focusing on component…</string>
+    <string name="component_rendered">Component rendered!</string>
+
+    <string name="model_grid_png">models/trigrid.png</string>
+    <string name="model_cpu_obj">models/cpu.obj</string>
+    <string name="model_cpu_png">models/cpu.png</string>
+    <string name="model_hdrive_obj">models/hdrive.obj</string>
+    <string name="model_hdrive_png">models/hdrive.png</string>
+    <string name="model_mboard_obj">models/mboard.obj</string>
+    <string name="model_mboard_png">models/mboard.png</string>
+    <string name="model_power_obj">models/power.obj</string>
+    <string name="model_power_png">models/power.png</string>
+
+    <string name="failed_to_read_asset">Failed to read an asset file</string>
+    <string name="exception_on_opengl">Exception on the OpenGL thread</string>
+
+    <string name="app_menu_title">CPLeA</string>
+    <string name="app_menu_subtitle">Computer Part Learning Aide Using Convolutional Neural Network and Augmented Reality</string>
+    <string name="button_start">Start</string>
+    <string name="lockOn">Lock-On Component</string>
+    <string name="lockedOn">Component Locked</string>
+
 </resources>
