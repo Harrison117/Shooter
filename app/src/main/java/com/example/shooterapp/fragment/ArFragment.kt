@@ -45,13 +45,25 @@
 
 package com.example.shooterapp.fragment
 
+import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.opengl.GLES20
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.view.*
+
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+
+import com.example.shooterapp.R
+import com.example.shooterapp.ar.helpers.CameraPermissionHelper
+import com.example.shooterapp.ar.helpers.DisplayRotationHelper
+import com.example.shooterapp.ar.helpers.SnackbarHelper
+import com.example.shooterapp.ar.helpers.TrackingStateHelper
+import com.example.shooterapp.ar.rendering.*
+import com.example.shooterapp.databinding.FragmentArBinding
 
 import com.google.ar.core.*
 import com.google.ar.core.ArCoreApk.InstallStatus
@@ -62,16 +74,10 @@ import java.util.concurrent.ArrayBlockingQueue
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-import com.example.shooterapp.ar.helpers.*
-import com.example.shooterapp.ar.rendering.*
-import com.example.shooterapp.databinding.FragmentArBinding
-import com.example.shooterapp.R
 
 class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
     private var installRequested = false
-
-    private var mode: Mode = Mode.VIKING
 
     private lateinit var surfaceView: GLSurfaceView
     private var session: Session? = null
@@ -87,27 +93,35 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
     private val pointCloudRenderer: PointCloudRenderer = PointCloudRenderer()
 
     // TODO: Declare ObjectRenderers and PlaneAttachments here
-    private val vikingObject = ObjectRenderer()
-    private val cannonObject = ObjectRenderer()
-    private val targetObject = ObjectRenderer()
-
-    private var vikingAttachment: PlaneAttachment? = null
-    private var cannonAttachment: PlaneAttachment? = null
-    private var targetAttachment: PlaneAttachment? = null
+    private var componentObject = ObjectRenderer()
+    private var componentAttachment: PlaneAttachment? = null
 
     // Temporary matrix allocated here to reduce number of allocations and taps for each frame.
     private val maxAllocationSize = 16
     private val anchorMatrix = FloatArray(maxAllocationSize)
     private val queuedSingleTaps = ArrayBlockingQueue<MotionEvent>(maxAllocationSize)
 
+    private var isObjectRendered: Boolean = false
+    private var isDelayed: Boolean = false
+    private lateinit var motionEventUp: MotionEvent
+    private lateinit var motionEventDown: MotionEvent
+    private val delayHandler: Handler = Handler(Looper.getMainLooper())
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
-        val binding = DataBindingUtil.inflate<FragmentArBinding>(inflater, R.layout.fragment_ar, container, false)
+        val binding = DataBindingUtil.inflate<FragmentArBinding>(
+            inflater,
+            R.layout.fragment_ar,
+            container,
+            false
+        )
         surfaceView = binding.surfaceView
+
+        binding.lifecycleOwner = this
 
         trackingStateHelper = TrackingStateHelper(requireActivity())
         displayRotationHelper = DisplayRotationHelper(requireContext())
@@ -116,18 +130,42 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
         setupTapDetector()
         setupSurfaceView()
-        return super.onCreateView(inflater, container, savedInstanceState)
+
+        // reset in case of fragment change
+        isObjectRendered = false
+        return binding.root
     }
 
-/*
-    fun onRadioButtonClicked(view: View) {
-        when (view.id) {
-            R.id.radioCannon -> mode = Mode.CANNON
-            R.id.radioTarget -> mode = Mode.TARGET
-            else -> mode = Mode.VIKING
-        }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // setup simulated tap to push into queue
+        val downTime = SystemClock.uptimeMillis()
+        val eventTime = SystemClock.uptimeMillis() + 100;
+        val x = surfaceView.resources.displayMetrics.widthPixels / 2
+        val y = surfaceView.resources.displayMetrics.heightPixels / 2
+        val metaState = 0
+
+        Log.d(TAG, "Center: ($x, $y)")
+
+        // setup tap action simulation
+        motionEventDown = MotionEvent.obtain(
+            downTime,
+            eventTime,
+            MotionEvent.ACTION_DOWN,
+            x.toFloat(),
+            y.toFloat(),
+            metaState
+        )
+        motionEventUp = MotionEvent.obtain(
+            downTime,
+            eventTime,
+            MotionEvent.ACTION_UP,
+            x.toFloat(),
+            y.toFloat(),
+            metaState
+        )
     }
-*/
 
     private fun setupSurfaceView() {
         // Set up renderer.
@@ -140,27 +178,26 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
         surfaceView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
     }
 
-    private fun simulateTap() {
-
-    }
-
     // (it looks like you only add the tap event if the gesture is UP, not DOWN)
     private fun setupTapDetector() {
-        gestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapUp(e: MotionEvent): Boolean {
-                onSingleTap(e)
-                return true
-            }
+        gestureDetector = GestureDetector(
+            requireContext(),
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onSingleTapUp(e: MotionEvent): Boolean {
+                    onSingleTap(e)
+                    return true
+                }
 
-            override fun onDown(e: MotionEvent): Boolean {
-                return true
-            }
-        })
+                override fun onDown(e: MotionEvent): Boolean {
+                    return true
+                }
+            })
     }
 
     private fun onSingleTap(e: MotionEvent) {
         // Queue tap if there is space. Tap is lost if queue is full.
         queuedSingleTaps.offer(e)
+        Log.d(TAG, "Single tap queued!")
     }
 
     override fun onResume() {
@@ -175,7 +212,10 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
         try {
             session?.resume()
         } catch (e: CameraNotAvailableException) {
-            messageSnackbarHelper.showError(requireActivity(), getString(R.string.camera_not_available))
+            messageSnackbarHelper.showError(
+                requireActivity(),
+                getString(R.string.camera_not_available)
+            )
             session = null
             return
         }
@@ -251,6 +291,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f)
+        lateinit var modelObjectName: String
+        lateinit var modelObjectImageName: String
 
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
@@ -259,18 +301,42 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             planeRenderer.createOnGlThread(requireContext(), getString(R.string.model_grid_png))
             pointCloudRenderer.createOnGlThread(requireContext())
 
-            // TODO - set up the objects
-/*
-            vikingObject.createOnGlThread(requireContext(), getString(R.string.model_viking_obj), getString(R.string.model_viking_png))
-            cannonObject.createOnGlThread(requireContext(), getString(R.string.model_cannon_obj), getString(R.string.model_cannon_png))
-            targetObject.createOnGlThread(requireContext(), getString(R.string.model_target_obj), getString(R.string.model_target_png))
+            // TODO - set up object
+            val testString = "power"
+            when (testString/*arguments.component.toString()*/) {
+                "power" -> {
+                    modelObjectName = getString(R.string.model_power_obj)
+                    modelObjectImageName = getString(R.string.model_power_png)
+                }
+                "mboard" -> {
+                    modelObjectName = getString(R.string.model_mboard_obj)
+                    modelObjectImageName = getString(R.string.model_mboard_png)
+                }
+                "hdrive" -> {
+                    modelObjectName = getString(R.string.model_hdrive_obj)
+                    modelObjectImageName = getString(R.string.model_hdrive_png)
+                }
+                "cpu" -> {
+                    modelObjectName = getString(R.string.model_cpu_obj)
+                    modelObjectImageName = getString(R.string.model_cpu_png)
+                }
+                // DEBUG
+                else -> {
+                    modelObjectName = getString(R.string.model_power_obj)
+                    modelObjectImageName = getString(R.string.model_power_png)
+                }
+            }
+            componentObject.createOnGlThread(
+                requireContext(),
+                modelObjectName,
+                modelObjectImageName
+            )
+            componentObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
 
-            vikingObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
-            cannonObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
-            targetObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f)
-*/
         } catch (e: IOException) {
             Log.e(TAG, getString(R.string.failed_to_read_asset), e)
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "Context returns Null", e)
         }
     }
 
@@ -293,6 +359,17 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
                 val frame = it.update()
                 val camera = frame.camera
 
+                // filters unnecessary taps
+                //   (if object is already rendered, stop simulation)
+                //   (if execution is delayed, pause simulation)
+                if (!isObjectRendered && !isDelayed) {
+                    delayHandler.postDelayed({ simulateTap() }, DELAY_TIME)
+
+                    // tap simulation has been delayed; flip boolean
+                    isDelayed = true
+                    messageSnackbarHelper.showMessage(requireActivity(), "Move camera around while focusing on component...")
+                }
+
                 // Handle one tap per frame.
                 handleTap(frame, camera)
                 drawBackground(frame)
@@ -311,33 +388,15 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
                 checkPlaneDetected()
                 visualizePlanes(camera, projectionMatrix)
 
-                // TODO: Call drawObject() for Viking, Cannon and Target here
-                /*
                 drawObject(
-                    vikingObject,
-                    vikingAttachment,
-                    Mode.VIKING.scaleFactor,
+                    componentObject,
+                    componentAttachment,
+                    0.1f,
                     projectionMatrix,
                     viewMatrix,
                     lightIntensity
                 )
-                drawObject(
-                    cannonObject,
-                    cannonAttachment,
-                    Mode.CANNON.scaleFactor,
-                    projectionMatrix,
-                    viewMatrix,
-                    lightIntensity
-                )
-                drawObject(
-                    targetObject,
-                    targetAttachment,
-                    Mode.TARGET.scaleFactor,
-                    projectionMatrix,
-                    viewMatrix,
-                    lightIntensity
-                )
-*/
+
             } catch (t: Throwable) {
                 Log.e(TAG, getString(R.string.exception_on_opengl), t)
             }
@@ -364,6 +423,12 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
         lightIntensity: FloatArray
     ) {
         if (planeAttachment?.isTracking == true) {
+            // set
+            if(!isObjectRendered) {
+                isObjectRendered = true
+                messageSnackbarHelper.showMessage(requireActivity(), "Component rendered!")
+            }
+
             planeAttachment.pose.toMatrix(anchorMatrix, 0)
 
             // Update and draw the model
@@ -473,23 +538,24 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
                             && trackable.orientationMode
                             == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL)
                 ) {
-                    // TODO: Create an anchor if a plane or an oriented point was hit
                     // get component string arg passed from camera fragment, add anchor based on component attachment
-                    /*
-                    when (mode) {
-                        Mode.VIKING -> vikingAttachment = addSessionAnchorFromAttachment(vikingAttachment, hit)
-                        Mode.CANNON -> cannonAttachment = addSessionAnchorFromAttachment(cannonAttachment, hit)
-                        Mode.TARGET -> targetAttachment = addSessionAnchorFromAttachment(targetAttachment, hit)
-                    }
-                    */
+                    componentAttachment = addSessionAnchorFromAttachment(componentAttachment, hit)
                     break
                 }
             }
         }
     }
 
-    // TODO: Add addSessionAnchorFromAttachment() function here
-    fun addSessionAnchorFromAttachment(
+    private fun simulateTap() {
+        val retValUp = surfaceView.dispatchTouchEvent(motionEventDown)
+        val retValDn = surfaceView.dispatchTouchEvent(motionEventUp)
+        Log.d(TAG, "Event dispatched! TRUE?: $retValUp, $retValDn")
+
+        // the delay has ended
+        isDelayed = false
+    }
+
+    private fun addSessionAnchorFromAttachment(
         previousAttachment: PlaneAttachment?,
         hit: HitResult
     ): PlaneAttachment {
@@ -503,5 +569,6 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
     companion object {
         private const val TAG: String = "ArFragment"
+        private const val DELAY_TIME: Long = 1000
     }
 }

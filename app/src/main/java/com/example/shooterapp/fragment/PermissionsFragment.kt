@@ -19,19 +19,19 @@ class PermissionsFragment: Fragment() {
         ActivityResultContracts.RequestPermission()) { requestPermissionGranted ->
         when {
             requestPermissionGranted || isAllPermissionGranted -> {
+                // proceed to camera fragment
                 Navigation
                     .findNavController(requireActivity(), R.id.nav_container)
                     .navigate(PermissionsFragmentDirections.actionPermissionsFragmentToCameraFragment())
-                // todo: proceed to camera fragment
             }
 
             shouldShowRequestPermissionRationale(CAMERA_PERMISSION) -> {
-                // todo: request permission again, explaining why you need the camera
+                // request permission again, explaining why you need the camera
                 isAllPermissionGranted = false
             }
 
             else -> {
-                // todo: request permissions again
+                // request permissions again
                 isAllPermissionGranted = false
             }
         }
@@ -40,7 +40,7 @@ class PermissionsFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // todo: pass arguments to next fragment
+        // pass arguments to next fragment
         isAllPermissionGranted = allPermissionsGranted(requireContext())
     }
 

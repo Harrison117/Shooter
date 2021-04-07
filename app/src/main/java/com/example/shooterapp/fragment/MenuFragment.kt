@@ -22,6 +22,11 @@ class MenuFragment: Fragment() {
             view.findNavController()
                     .navigate(MenuFragmentDirections.actionMenuFragmentToPermissionsFragment())
         }
+
+        binding.testArStart.setOnClickListener { view: View ->
+            view.findNavController()
+                    .navigate(MenuFragmentDirections.actionMenuFragmentToArFragment())
+        }
         return binding.root
     }
 

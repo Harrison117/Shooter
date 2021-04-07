@@ -13,6 +13,9 @@
         <action
             android:id="@+id/action_menuFragment_to_permissionsFragment"
             app:destination="@id/permissionsFragment" />
+        <action
+            android:id="@+id/action_menuFragment_to_arFragment"
+            app:destination="@id/arFragment" />
     </fragment>
     <fragment
         android:id="@+id/permissionsFragment"
@@ -42,7 +45,8 @@
     <fragment
         android:id="@+id/arFragment"
         android:name="com.example.shooterapp.fragment.ArFragment"
-        android:label="ArFragment" >
+        android:label="ArFragment"
+        tools:layout="@layout/fragment_ar" >
         <action
             android:id="@+id/action_arFragment_to_cameraFragment"
             app:destination="@id/cameraFragment"

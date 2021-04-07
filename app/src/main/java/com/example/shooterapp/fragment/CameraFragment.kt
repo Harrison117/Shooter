@@ -51,7 +51,7 @@ class CameraFragment: Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_camera, container, false)
 
@@ -97,7 +97,7 @@ class CameraFragment: Fragment() {
             .build()
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
-        cameraProviderFuture.addListener( Runnable{
+        cameraProviderFuture.addListener( /*Runnable*/ { /*it -> Runnable*/
             preview = buildPreviewUseCase()
             imageAnalysis = buildImageAnalysisCase()
 
