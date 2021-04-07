@@ -51,5 +51,8 @@
             android:id="@+id/action_arFragment_to_cameraFragment"
             app:destination="@id/cameraFragment"
             app:popUpTo="@id/cameraFragment" />
+        <argument
+            android:name="component"
+            app:argType="string" />
     </fragment>
 </navigation>

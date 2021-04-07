@@ -96,14 +96,18 @@
             app:layout_constraintEnd_toStartOf="@+id/guideline26"
             app:layout_constraintStart_toStartOf="@+id/guideline25" />
 
+<!--
         <Button
             android:id="@+id/test_ar_start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
             android:text="AR Start"
             app:layout_constraintEnd_toStartOf="@+id/guideline24"
+            app:layout_constraintHorizontal_bias="0.538"
             app:layout_constraintStart_toStartOf="@+id/guideline23"
-            tools:layout_editor_absoluteY="581dp" />
+            app:layout_constraintTop_toBottomOf="@+id/menu_button_start" />
+-->
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>

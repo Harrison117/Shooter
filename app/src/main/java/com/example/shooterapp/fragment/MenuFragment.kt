@@ -23,16 +23,12 @@ class MenuFragment: Fragment() {
                     .navigate(MenuFragmentDirections.actionMenuFragmentToPermissionsFragment())
         }
 
+        /*
         binding.testArStart.setOnClickListener { view: View ->
             view.findNavController()
-                    .navigate(MenuFragmentDirections.actionMenuFragmentToArFragment())
+                    .navigate(MenuFragmentDirections.actionMenuFragmentToArFragment("power"))
         }
+        */
         return binding.root
     }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-
-    }
-
-
 }

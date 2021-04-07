@@ -56,6 +56,7 @@ import android.view.*
 
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.navArgs
 
 import com.example.shooterapp.R
 import com.example.shooterapp.ar.helpers.CameraPermissionHelper
@@ -92,7 +93,6 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
     private val planeRenderer: PlaneRenderer = PlaneRenderer()
     private val pointCloudRenderer: PointCloudRenderer = PointCloudRenderer()
 
-    // TODO: Declare ObjectRenderers and PlaneAttachments here
     private var componentObject = ObjectRenderer()
     private var componentAttachment: PlaneAttachment? = null
 
@@ -106,6 +106,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
     private lateinit var motionEventUp: MotionEvent
     private lateinit var motionEventDown: MotionEvent
     private val delayHandler: Handler = Handler(Looper.getMainLooper())
+
+    private val args: ArFragmentArgs by navArgs()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -301,9 +303,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             planeRenderer.createOnGlThread(requireContext(), getString(R.string.model_grid_png))
             pointCloudRenderer.createOnGlThread(requireContext())
 
-            // TODO - set up object
-            val testString = "power"
-            when (testString/*arguments.component.toString()*/) {
+            // set up object
+            when (args.component) {
                 "power" -> {
                     modelObjectName = getString(R.string.model_power_obj)
                     modelObjectImageName = getString(R.string.model_power_png)
@@ -367,7 +368,7 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
                     // tap simulation has been delayed; flip boolean
                     isDelayed = true
-                    messageSnackbarHelper.showMessage(requireActivity(), "Move camera around while focusing on component...")
+                    messageSnackbarHelper.showMessage(requireActivity(), getString(R.string.move_while_focused))
                 }
 
                 // Handle one tap per frame.
@@ -426,7 +427,7 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             // set
             if(!isObjectRendered) {
                 isObjectRendered = true
-                messageSnackbarHelper.showMessage(requireActivity(), "Component rendered!")
+                messageSnackbarHelper.showMessage(requireActivity(), getString(R.string.component_rendered))
             }
 
             planeAttachment.pose.toMatrix(anchorMatrix, 0)

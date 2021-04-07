@@ -1,6 +1,8 @@
 package com.example.shooterapp.fragment
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.util.Size
 import android.view.LayoutInflater
@@ -20,6 +22,7 @@ import androidx.navigation.Navigation
 
 import com.example.shooterapp.R
 import com.example.shooterapp.analyzer.ComponentAnalyzer
+import com.example.shooterapp.ar.helpers.SnackbarHelper
 import com.example.shooterapp.databinding.FragmentCameraBinding
 import com.example.shooterapp.util.Prediction
 import com.example.shooterapp.util.PredictionViewModel
@@ -33,7 +36,7 @@ class CameraFragment: Fragment() {
     private lateinit var binding: FragmentCameraBinding
 
     private lateinit var previewView: PreviewView
-    private lateinit var btnToggleScan: ToggleButton
+    private lateinit var btnLockOn: ToggleButton
     private lateinit var predictionResult: TextView
 
 
@@ -46,6 +49,9 @@ class CameraFragment: Fragment() {
     private lateinit var cameraExecutor: ExecutorService
 
     private val predictViewModel: PredictionViewModel by viewModels()
+    private val messageSnackbar = SnackbarHelper()
+
+    private val delayHandler: Handler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,7 +69,7 @@ class CameraFragment: Fragment() {
         binding.lifecycleOwner = this
 
         previewView = binding.previewView
-        btnToggleScan = binding.scanToggle
+        btnLockOn = binding.lockToggle
         predictionResult = binding.predictTextView
 
         return binding.root
@@ -71,6 +77,19 @@ class CameraFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        btnLockOn.setOnCheckedChangeListener { _, isChecked ->
+            if(isChecked) {
+                val result = predictionResult.text.toString()
+                messageSnackbar.showMessage(requireActivity(), "Component $result Locked On! Visualizing in 3...")
+                delayHandler.postDelayed({
+                    btnLockOn.isChecked = false
+                    Navigation
+                        .findNavController(requireActivity(), R.id.nav_container)
+                        .navigate(CameraFragmentDirections.actionCameraFragmentToArFragment(result))
+                }, 3000)
+            }
+        }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
         startCamera()
@@ -97,7 +116,7 @@ class CameraFragment: Fragment() {
             .build()
 
         cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
-        cameraProviderFuture.addListener( /*Runnable*/ { /*it -> Runnable*/
+        cameraProviderFuture.addListener({
             preview = buildPreviewUseCase()
             imageAnalysis = buildImageAnalysisCase()
 
@@ -140,7 +159,6 @@ class CameraFragment: Fragment() {
             analysisUseCase.setAnalyzer(cameraExecutor, ComponentAnalyzer(requireContext()){ result: Prediction ->
                 // data will be automatically shown in the view
                 predictViewModel.updateData(result)
-                Log.d(TAG, "Component: $result")
             })
         }
     }
