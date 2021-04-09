@@ -109,6 +109,8 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
     private val args: ArFragmentArgs by navArgs()
 
+    private var DEF_SCALE_FACTOR = 0.025f
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -392,7 +394,7 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
                 drawObject(
                     componentObject,
                     componentAttachment,
-                    0.1f,
+                    DEF_SCALE_FACTOR,
                     projectionMatrix,
                     viewMatrix,
                     lightIntensity
