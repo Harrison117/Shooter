@@ -59,7 +59,6 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
     private val ctx = ctx
 
     override fun analyze(image: ImageProxy) {
-
         val bmImg = image.toBitmap()
 
         if(bmImg == null) {
