@@ -19,6 +19,7 @@ package com.example.shooterapp.util
 import android.content.Context
 import android.graphics.*
 import androidx.camera.core.ImageProxy
+import com.example.shooterapp.BuildConfig
 
 /** UNUSED IMPORTS FROM ORIGINAL CODE:
 
@@ -47,7 +48,7 @@ import java.nio.ByteBuffer
  * since this is not an efficient camera pipeline due to the multiple copies
  * required to convert each frame.
  */
-class YuvToRgbConverter(context: Context) {
+class YuvToRgbConverter() {
 
     // * START: helper functions for imageProxy to Bitmap conversion modified and taken from:
     // *   https://stackoverflow.com/questions/56772967/converting-imageproxy-to-bitmap/62105972#62105972
@@ -63,9 +64,11 @@ class YuvToRgbConverter(context: Context) {
     // * END: helper functions for imageProxy to Bitmap conversion modified and taken from:
     // *   https://stackoverflow.com/questions/56772967/converting-imageproxy-to-bitmap/62105972#62105972
 
-    fun imageToByteBuffer(image: ImageProxy, outputBuffer: ByteArray, pixelCount: Int) {
+    private fun imageToByteBuffer(image: ImageProxy, outputBuffer: ByteArray, pixelCount: Int) {
 
-        assert(image.format == ImageFormat.YUV_420_888)
+        if (BuildConfig.DEBUG && image.format != ImageFormat.YUV_420_888) {
+            error("Assertion failed")
+        }
 
         val imageCrop = image.cropRect
         val imagePlanes = image.planes
