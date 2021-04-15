@@ -5,9 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Size
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.TextView
 import android.widget.ToggleButton
 
@@ -47,11 +45,14 @@ class CameraFragment: Fragment() {
     private lateinit var imageAnalysis: ImageAnalysis
 
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var orientationEventListener: OrientationEventListener
+
 
     private val predictViewModel: PredictionViewModel by viewModels()
     private val messageSnackbar = SnackbarHelper()
 
     private val delayHandler: Handler = Handler(Looper.getMainLooper())
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -81,18 +82,33 @@ class CameraFragment: Fragment() {
         btnLockOn.setOnCheckedChangeListener { _, isChecked ->
             if(isChecked) {
                 val result = predictionResult.text.toString()
-                messageSnackbar.showMessage(requireActivity(), "Component $result Locked On! Visualizing in 3...")
+                messageSnackbar.showMessage(requireActivity(), "Component Locked On! Visualizing in 2...")
                 delayHandler.postDelayed({
                     btnLockOn.isChecked = false
                     Navigation
                         .findNavController(requireActivity(), R.id.nav_container)
                         .navigate(CameraFragmentDirections.actionCameraFragmentToArFragment(result))
-                }, 3000)
+                }, 2000)
             }
         }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
         startCamera()
+
+        orientationEventListener = object: OrientationEventListener(requireContext()) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == UNKNOWN_ORIENTATION) {
+                    return
+                }
+                imageAnalysis.targetRotation = when (orientation) {
+                    in 45 until 135 -> Surface.ROTATION_270
+                    in 135 until 225 -> Surface.ROTATION_180
+                    in 225 until 315 -> Surface.ROTATION_90
+                    else -> Surface.ROTATION_0
+                }
+            }
+        }
+         orientationEventListener.enable()
     }
 
     override fun onResume() {
@@ -102,11 +118,13 @@ class CameraFragment: Fragment() {
                 .findNavController(requireActivity(), R.id.nav_container)
                 .navigate(CameraFragmentDirections.actionCameraFragmentToPermissionsFragment())
         }
+
     }
 
-    override fun onDestroyView() {
+    override fun onStop() {
+        super.onStop()
         stopCamera()
-        super.onDestroyView()
+//        orientationEventListener.disable()
     }
 
     private fun startCamera() {
@@ -142,18 +160,13 @@ class CameraFragment: Fragment() {
     }
 
     private fun buildPreviewUseCase(): Preview {
-        return Preview.Builder().apply{
-            setTargetAspectRatio(DEF_ASPECT_RATIO)
-            setTargetRotation(binding.previewView.display.rotation)
-        }.build()
+        return Preview.Builder().build()
     }
 
     private fun buildImageAnalysisCase(): ImageAnalysis {
-        return ImageAnalysis.Builder().apply {
-            setTargetResolution(Size(150, 150))
-            setTargetRotation(binding.previewView.display.rotation)
-            setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-        }.build().also{ analysisUseCase: ImageAnalysis ->
+        return ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build().also{ analysisUseCase: ImageAnalysis ->
             // the parameter in setAnalyzer is the value returned from the analyze() function
             //   the custom analyzer class specified
             analysisUseCase.setAnalyzer(cameraExecutor, ComponentAnalyzer(requireContext()){ result: Prediction ->
@@ -172,6 +185,6 @@ class CameraFragment: Fragment() {
 
     companion object {
         private const val TAG = "CameraFragment"
-        private const val DEF_ASPECT_RATIO = AspectRatio.RATIO_16_9
+        private const val UNKNOWN_ORIENTATION = -1
     }
 }

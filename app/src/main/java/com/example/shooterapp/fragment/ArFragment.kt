@@ -56,6 +56,7 @@ import android.view.*
 
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 
 import com.example.shooterapp.R
@@ -65,6 +66,7 @@ import com.example.shooterapp.ar.helpers.SnackbarHelper
 import com.example.shooterapp.ar.helpers.TrackingStateHelper
 import com.example.shooterapp.ar.rendering.*
 import com.example.shooterapp.databinding.FragmentArBinding
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 import com.google.ar.core.*
 import com.google.ar.core.ArCoreApk.InstallStatus
@@ -81,6 +83,7 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
     private var installRequested = false
 
     private lateinit var surfaceView: GLSurfaceView
+    private lateinit var componentInfoBtn: FloatingActionButton
     private var session: Session? = null
 
     // Tap handling and UI.
@@ -124,6 +127,7 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             false
         )
         surfaceView = binding.surfaceView
+        componentInfoBtn = binding.componentInfoFloatingBtn
 
         binding.lifecycleOwner = this
 
@@ -169,6 +173,11 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             y.toFloat(),
             metaState
         )
+
+        componentInfoBtn.setOnClickListener {
+            findNavController()
+                .navigate(ArFragmentDirections.actionArFragmentToComponentInfoFragment(args.component))
+        }
     }
 
     private fun setupSurfaceView() {
@@ -305,30 +314,12 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             planeRenderer.createOnGlThread(requireContext(), getString(R.string.model_grid_png))
             pointCloudRenderer.createOnGlThread(requireContext())
 
+            modelObjectName = "models/${args.component}.obj"
+            modelObjectImageName = "models/${args.component}.png"
+
+            Log.d(TAG, "Component: $modelObjectName")
+
             // set up object
-            when (args.component) {
-                "power" -> {
-                    modelObjectName = getString(R.string.model_power_obj)
-                    modelObjectImageName = getString(R.string.model_power_png)
-                }
-                "mboard" -> {
-                    modelObjectName = getString(R.string.model_mboard_obj)
-                    modelObjectImageName = getString(R.string.model_mboard_png)
-                }
-                "hdrive" -> {
-                    modelObjectName = getString(R.string.model_hdrive_obj)
-                    modelObjectImageName = getString(R.string.model_hdrive_png)
-                }
-                "cpu" -> {
-                    modelObjectName = getString(R.string.model_cpu_obj)
-                    modelObjectImageName = getString(R.string.model_cpu_png)
-                }
-                // DEBUG
-                else -> {
-                    modelObjectName = getString(R.string.model_power_obj)
-                    modelObjectImageName = getString(R.string.model_power_png)
-                }
-            }
             componentObject.createOnGlThread(
                 requireContext(),
                 modelObjectName,

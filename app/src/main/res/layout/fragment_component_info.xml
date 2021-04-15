@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        tools:context=".fragment.ComponentInfoFragment">
+
+        <!-- TODO: Update placeholder text -->
+        <TextView
+            android:id="@+id/componentName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sample Component Name"
+            android:gravity="center"
+            android:layout_margin="20dp"
+            android:textSize="36sp" />
+
+        <TextView
+            android:id="@+id/componentDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sample Component Description"
+            android:gravity="center"
+            android:layout_margin="20dp"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/componentProb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Sample Component Problems"
+            android:gravity="center"
+            android:layout_margin="20dp"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+</layout>

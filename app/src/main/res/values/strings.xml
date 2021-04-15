@@ -33,5 +33,21 @@
     <string name="button_start">Start</string>
     <string name="lockOn">Lock-On Component</string>
     <string name="lockedOn">Component Locked</string>
+    <string name="component_info">Component Info</string>
+
+    <string name="power_component_name">Power Supply</string>
+    <string name="mboard_component_name">Motherboard</string>
+    <string name="hdrive_component_name">Hard Disk Drive (HDD)</string>
+    <string name="cpu_component_name">Central Processing Unit</string>
+
+    <string name="power_component_desc">power sample desc</string>
+    <string name="mboard_component_desc">mboard sample desc</string>
+    <string name="hdrive_component_desc">hdrive sample desc</string>
+    <string name="cpu_component_desc">cpu sample desc</string>
+
+    <string name="power_component_prob">power sample problems</string>
+    <string name="mboard_component_prob">mboard sample problems</string>
+    <string name="hdrive_component_prob">hdrive sample problems</string>
+    <string name="cpu_component_prob">cpu sample problems</string>
 
 </resources>

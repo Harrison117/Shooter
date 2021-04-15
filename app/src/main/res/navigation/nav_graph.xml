@@ -54,5 +54,20 @@
         <argument
             android:name="component"
             app:argType="string" />
+        <action
+            android:id="@+id/action_arFragment_to_componentInfoFragment"
+            app:destination="@id/componentInfoFragment" />
     </fragment>
+    <dialog
+        android:id="@+id/componentInfoFragment"
+        android:name="com.example.shooterapp.fragment.ComponentInfoFragment"
+        android:label="ComponentInfoFragment"
+        android:layout="@layout/fragment_component_info">
+        <action
+            android:id="@+id/action_componentInfoFragment_to_arFragment"
+            app:destination="@id/arFragment" />
+        <argument
+            android:name="component"
+            app:argType="string" />
+    </dialog>
 </navigation>

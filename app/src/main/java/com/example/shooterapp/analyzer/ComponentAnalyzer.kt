@@ -30,6 +30,7 @@ import org.tensorflow.lite.support.label.TensorLabel
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
+import java.util.concurrent.TimeUnit
 
 typealias  ResultListener = (Prediction) -> Unit
 
@@ -56,53 +57,64 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
         ComponentModel.newInstance(ctx, options)
     }
 
+    private var lastTimeStamp: Long = 0L
+    private val interval = TimeUnit.MILLISECONDS.toMillis(5000)
+
     private val ctx = ctx
 
     override fun analyze(image: ImageProxy) {
-        val bmImg = image.toBitmap()
+        // analyze an image every after one second
+        val currentTimeStamp = System.currentTimeMillis()
+        val deltaTime = currentTimeStamp - lastTimeStamp
+        if(deltaTime >= interval) {
+            val bmImg = image.toBitmap()
 
-        if(bmImg == null) {
-            Log.d(TAG, "Input image is null ")
-            image.close()
-            return
+            if (bmImg == null) {
+                Log.d(TAG, "Input image is null ")
+                image.close()
+                return
+            }
+
+            saveMediaToStorage(bmImg)
+
+            val cropSize = if (bmImg.width >= bmImg.height)
+                bmImg.height
+            else
+                bmImg.width
+
+            // prepare dimensions of input image to square-like dimensions
+            // size of input required for model is 150x150
+            val imageProcessor = ImageProcessor.Builder()
+                .add(ResizeWithCropOrPadOp(cropSize, cropSize))
+                .add(ResizeOp(150, 150, ResizeOp.ResizeMethod.BILINEAR))
+                .build()
+            var tImage = TensorImage(DataType.FLOAT32)
+            tImage.load(bmImg)
+            tImage = imageProcessor.process(tImage)
+
+            val probabilityProcessor = TensorProcessor.Builder()
+                .add(NormalizeOp(0f, 255f))
+                .build()
+
+            val outputs = componentModel.process(probabilityProcessor.process(tImage.tensorBuffer))
+            val outputBuffer = outputs.outputFeature0AsTensorBuffer
+
+            val tensorLabel = TensorLabel(labelList, outputBuffer)
+
+            val prediction = tensorLabel.mapWithFloatValue.maxByOrNull { it.value }
+
+            if (prediction == null) {
+                Log.d(TAG, "Output prediction is null ")
+                image.close()
+                return
+            }
+
+            val result = Prediction(prediction.key, prediction.value)
+
+            listener(result)
+
+            lastTimeStamp = currentTimeStamp
         }
-
-        val cropSize = if(bmImg.width >= bmImg.height)
-            bmImg.width
-        else
-            bmImg.height
-
-        // prepare dimensions of input image to square-like dimensions
-        // size of input required for model is 150x150
-        val imageProcessor = ImageProcessor.Builder()
-            .add(ResizeWithCropOrPadOp(cropSize, cropSize))
-            .add(ResizeOp(150, 150, ResizeOp.ResizeMethod.BILINEAR))
-            .build()
-        var tImage = TensorImage(DataType.FLOAT32)
-        tImage.load(bmImg)
-        tImage = imageProcessor.process(tImage)
-
-        val probabilityProcessor = TensorProcessor.Builder()
-            .add(NormalizeOp(0f,255f))
-            .build()
-
-        val outputs = componentModel.process(probabilityProcessor.process(tImage.tensorBuffer))
-        val outputBuffer = outputs.outputFeature0AsTensorBuffer
-
-        val tensorLabel = TensorLabel(labelList, outputBuffer)
-
-        val prediction = tensorLabel.mapWithFloatValue.maxByOrNull { it.value }
-
-        if (prediction == null) {
-            Log.d(TAG, "Output prediction is null ")
-            image.close()
-            return
-        }
-
-        val result = Prediction(prediction.key, prediction.value)
-
-        listener(result)
-
         // close current input image and move to next image fed on input
         image.close()
     }
@@ -167,7 +179,6 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
         fos?.use {
             //Finally writing the bitmap to the output stream that we opened
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
-            Toast.makeText(ctx, "Saved to Photos", Toast.LENGTH_SHORT)
         }
     }
 
