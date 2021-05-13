@@ -28,8 +28,7 @@
     <string name="failed_to_read_asset">Failed to read an asset file</string>
     <string name="exception_on_opengl">Exception on the OpenGL thread</string>
 
-    <string name="app_menu_title">CPLeA</string>
-    <string name="app_menu_subtitle">Computer Part Learning Aide Using Convolutional Neural Network and Augmented Reality</string>
+    <string name="app_menu_subtitle">Computer Part Detection Using Convolutional Neural Network and Augmented Reality</string>
     <string name="button_start">Start</string>
     <string name="lockOn">Lock-On Component</string>
     <string name="lockedOn">Component Locked</string>

@@ -46,24 +46,21 @@ class ComponentInfoFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        componentNameTextView.text = args.componentDisplay
         when(args.component) {
             "power" -> {
-                componentNameTextView.text = getString(R.string.power_component_name)
                 componentDescTextView.text = getString(R.string.power_component_desc)
                 componentProbTextView.text = getString(R.string.power_component_prob)
             }
             "mboard" -> {
-                componentNameTextView.text = getString(R.string.mboard_component_name)
                 componentDescTextView.text = getString(R.string.mboard_component_desc)
                 componentProbTextView.text = getString(R.string.mboard_component_prob)
             }
             "hdrive" -> {
-                componentNameTextView.text = getString(R.string.hdrive_component_name)
                 componentDescTextView.text = getString(R.string.hdrive_component_desc)
                 componentProbTextView.text = getString(R.string.hdrive_component_prob)
             }
             else -> {
-                componentNameTextView.text = getString(R.string.cpu_component_name)
                 componentDescTextView.text = getString(R.string.cpu_component_desc)
                 componentProbTextView.text = getString(R.string.cpu_component_prob)
             }

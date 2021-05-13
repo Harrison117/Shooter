@@ -8,9 +8,9 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.example.shooterapp.util.Label
 import com.example.shooterapp.util.Prediction
 import org.tensorflow.lite.support.image.TensorImage
 import java.io.ByteArrayOutputStream
@@ -36,7 +36,7 @@ typealias  ResultListener = (Prediction) -> Unit
 
 class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : ImageAnalysis.Analyzer {
 
-    private val labelList = arrayListOf("power","mboard","hdrive","cpu")
+    private val labelList = arrayListOf("cpu","hdrive","mboard","power")
 
     private val yuvToRgbConverter = YuvToRgbConverter()
 
@@ -58,7 +58,7 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
     }
 
     private var lastTimeStamp: Long = 0L
-    private val interval = TimeUnit.MILLISECONDS.toMillis(5000)
+    private val interval = TimeUnit.MILLISECONDS.toMillis(500)
 
     private val ctx = ctx
 
@@ -74,8 +74,8 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
                 image.close()
                 return
             }
-
-            saveMediaToStorage(bmImg)
+            // DEBUG
+            // saveMediaToStorage(bmImg)
 
             val cropSize = if (bmImg.width >= bmImg.height)
                 bmImg.height
@@ -109,7 +109,13 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
                 return
             }
 
-            val result = Prediction(prediction.key, prediction.value)
+            val name_display = when (prediction.key.toString()) {
+                "cpu" -> "CPU"
+                "hdrive" -> "Hard Disk Drive"
+                "mboard" -> "Motherboard"
+                else -> "Power Supply"
+            }
+            val result = Prediction(Label(name_display, prediction.key), prediction.value)
 
             listener(result)
 

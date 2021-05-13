@@ -176,7 +176,7 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
         componentInfoBtn.setOnClickListener {
             findNavController()
-                .navigate(ArFragmentDirections.actionArFragmentToComponentInfoFragment(args.component))
+                .navigate(ArFragmentDirections.actionArFragmentToComponentInfoFragment(args.component,args.componentDisplay))
         }
     }
 
