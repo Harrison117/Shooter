@@ -3,6 +3,7 @@ package com.example.shooterapp.analyzer
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
+import android.graphics.Color.rgb
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -31,12 +32,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
 typealias  ResultListener = (Prediction) -> Unit
 
 class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : ImageAnalysis.Analyzer {
 
-    private val labelList = arrayListOf("cpu","hdrive","mboard","power")
+    private val labelList = arrayListOf("power","mboard","hdrive","cpu")
 
     private val yuvToRgbConverter = YuvToRgbConverter()
 
@@ -58,7 +60,7 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
     }
 
     private var lastTimeStamp: Long = 0L
-    private val interval = TimeUnit.MILLISECONDS.toMillis(500)
+    private val interval = TimeUnit.MILLISECONDS.toMillis(5000)
 
     private val ctx = ctx
 
@@ -75,7 +77,7 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
                 return
             }
             // DEBUG
-            // saveMediaToStorage(bmImg)
+//             saveMediaToStorage(bmImg)
 
             val cropSize = if (bmImg.width >= bmImg.height)
                 bmImg.height
@@ -84,13 +86,32 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
 
             // prepare dimensions of input image to square-like dimensions
             // size of input required for model is 150x150
-            val imageProcessor = ImageProcessor.Builder()
+            val imageCropProcessor = ImageProcessor.Builder()
                 .add(ResizeWithCropOrPadOp(cropSize, cropSize))
+                .build()
+
+            val imageResizeHalfProcessor = ImageProcessor.Builder()
+                .add(ResizeOp(cropSize/2, cropSize/2, ResizeOp.ResizeMethod.BILINEAR))
+                .build()
+
+            val imageResizeTargetProcessor = ImageProcessor.Builder()
                 .add(ResizeOp(150, 150, ResizeOp.ResizeMethod.BILINEAR))
                 .build()
+
             var tImage = TensorImage(DataType.FLOAT32)
             tImage.load(bmImg)
-            tImage = imageProcessor.process(tImage)
+
+            tImage = imageCropProcessor.process(tImage)
+            // DEBUG
+//            saveMediaToStorage(tImage.bitmap)
+
+            tImage = imageResizeHalfProcessor.process(tImage)
+            // DEBUG
+//            saveMediaToStorage(tImage.bitmap)
+
+            tImage = imageResizeTargetProcessor.process(tImage)
+            // DEBUG
+//             saveMediaToStorage(tImage.bitmap)
 
             val probabilityProcessor = TensorProcessor.Builder()
                 .add(NormalizeOp(0f, 255f))
@@ -186,6 +207,32 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
             //Finally writing the bitmap to the output stream that we opened
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
         }
+    }
+
+    private fun floatArrayToBitmap(floatArray: FloatArray, width: Int, height: Int) : Bitmap {
+
+        // Create empty bitmap in ARGB format
+        val bmp: Bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val pixels = IntArray(width * height * 4)
+
+        // mapping smallest value to 0 and largest value to 255
+        val maxValue = floatArray.max() ?: 1.0f
+        val minValue = floatArray.min() ?: -1.0f
+        val delta = maxValue-minValue
+
+        // Define if float min..max will be mapped to 0..255 or 255..0
+        val conversion = { v: Float -> ((v-minValue)/delta*255.0f).roundToInt()}
+
+        // copy each value from float array to RGB channels
+        for (i in 0 until width * height) {
+            val r = conversion(floatArray[i])
+            val g = conversion(floatArray[i+width*height])
+            val b = conversion(floatArray[i+2*width*height])
+            pixels[i] = rgb(r, g, b) // you might need to import for rgb()
+        }
+        bmp.setPixels(pixels, 0, width, 0, 0, width, height)
+
+        return bmp
     }
 
     companion object {

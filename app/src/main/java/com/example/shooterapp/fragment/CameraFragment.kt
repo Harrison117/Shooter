@@ -144,11 +144,14 @@ class CameraFragment: Fragment() {
     }
 
     private fun buildPreviewUseCase(): Preview {
-        return Preview.Builder().build()
+        return Preview.Builder()
+            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            .build()
     }
 
     private fun buildImageAnalysisCase(): ImageAnalysis {
         return ImageAnalysis.Builder()
+            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also{ analysisUseCase: ImageAnalysis ->
             // the parameter in setAnalyzer is the value returned from the analyze() function
