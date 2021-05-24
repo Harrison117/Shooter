@@ -94,6 +94,8 @@ class CameraFragment: Fragment() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
         startCamera()
+
+        messageSnackbar.showMessage(requireActivity(), "Center phone to desired part")
     }
 
     override fun onResume() {
@@ -109,6 +111,7 @@ class CameraFragment: Fragment() {
     override fun onStop() {
         super.onStop()
         stopCamera()
+        messageSnackbar.hide(requireActivity())
     }
 
     private fun startCamera() {

@@ -361,7 +361,6 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
 
                     // tap simulation has been delayed; flip boolean
                     isDelayed = true
-                    messageSnackbarHelper.showMessage(requireActivity(), getString(R.string.move_while_focused))
                 }
 
                 // Handle one tap per frame.
@@ -420,7 +419,6 @@ class ArFragment : Fragment(), GLSurfaceView.Renderer {
             // set
             if(!isObjectRendered) {
                 isObjectRendered = true
-                messageSnackbarHelper.showMessage(requireActivity(), getString(R.string.component_rendered))
             }
 
             planeAttachment.pose.toMatrix(anchorMatrix, 0)

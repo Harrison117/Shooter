@@ -60,7 +60,7 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
     }
 
     private var lastTimeStamp: Long = 0L
-    private val interval = TimeUnit.MILLISECONDS.toMillis(5000)
+    private val interval = TimeUnit.MILLISECONDS.toMillis(3000)
 
     private val ctx = ctx
 
@@ -99,6 +99,7 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
                 .build()
 
             var tImage = TensorImage(DataType.FLOAT32)
+//            var tImage_debug = TensorImage(DataType.FLOAT32)
             tImage.load(bmImg)
 
             tImage = imageCropProcessor.process(tImage)
@@ -111,7 +112,13 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
 
             tImage = imageResizeTargetProcessor.process(tImage)
             // DEBUG
-//             saveMediaToStorage(tImage.bitmap)
+//            saveMediaToStorage(tImage.bitmap)
+//
+//            tImage_debug.load(bmImg)
+//            tImage_debug = imageCropProcessor.process(tImage_debug)
+//            tImage_debug = imageResizeTargetProcessor.process(tImage_debug)
+//            // DEBUG
+//            saveMediaToStorage(tImage_debug.bitmap)
 
             val probabilityProcessor = TensorProcessor.Builder()
                 .add(NormalizeOp(0f, 255f))
