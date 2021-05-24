@@ -12,5 +12,6 @@ class PredictionViewModel: ViewModel() {
         _prediction.postValue(prediction)
     }
 }
+data class Label (val name_display: String, val name: String)
 
-data class Prediction (val label: String, val confidence: Float)
+data class Prediction (val label: Label, val confidence: Float)

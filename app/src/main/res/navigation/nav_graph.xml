@@ -57,6 +57,9 @@
         <action
             android:id="@+id/action_arFragment_to_componentInfoFragment"
             app:destination="@id/componentInfoFragment" />
+        <argument
+            android:name="component_display"
+            app:argType="string" />
     </fragment>
     <dialog
         android:id="@+id/componentInfoFragment"
@@ -68,6 +71,9 @@
             app:destination="@id/arFragment" />
         <argument
             android:name="component"
+            app:argType="string" />
+        <argument
+            android:name="component_display"
             app:argType="string" />
     </dialog>
 </navigation>

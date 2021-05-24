@@ -22,6 +22,7 @@ import com.example.shooterapp.R
 import com.example.shooterapp.analyzer.ComponentAnalyzer
 import com.example.shooterapp.ar.helpers.SnackbarHelper
 import com.example.shooterapp.databinding.FragmentCameraBinding
+import com.example.shooterapp.util.Label
 import com.example.shooterapp.util.Prediction
 import com.example.shooterapp.util.PredictionViewModel
 
@@ -35,7 +36,7 @@ class CameraFragment: Fragment() {
 
     private lateinit var previewView: PreviewView
     private lateinit var btnLockOn: ToggleButton
-    private lateinit var predictionResult: TextView
+    private var predictionResult: Label? = null
 
 
     private lateinit var camera: Camera
@@ -45,7 +46,7 @@ class CameraFragment: Fragment() {
     private lateinit var imageAnalysis: ImageAnalysis
 
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var orientationEventListener: OrientationEventListener
+
 
 
     private val predictViewModel: PredictionViewModel by viewModels()
@@ -71,7 +72,6 @@ class CameraFragment: Fragment() {
 
         previewView = binding.previewView
         btnLockOn = binding.lockToggle
-        predictionResult = binding.predictTextView
 
         return binding.root
     }
@@ -80,14 +80,14 @@ class CameraFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         btnLockOn.setOnCheckedChangeListener { _, isChecked ->
+            val result = predictionResult ?: return@setOnCheckedChangeListener
             if(isChecked) {
-                val result = predictionResult.text.toString()
                 messageSnackbar.showMessage(requireActivity(), "Component Locked On! Visualizing in 2...")
                 delayHandler.postDelayed({
                     btnLockOn.isChecked = false
                     Navigation
                         .findNavController(requireActivity(), R.id.nav_container)
-                        .navigate(CameraFragmentDirections.actionCameraFragmentToArFragment(result))
+                        .navigate(CameraFragmentDirections.actionCameraFragmentToArFragment(result.name, result.name_display))
                 }, 2000)
             }
         }
@@ -95,20 +95,7 @@ class CameraFragment: Fragment() {
         cameraExecutor = Executors.newSingleThreadExecutor()
         startCamera()
 
-        orientationEventListener = object: OrientationEventListener(requireContext()) {
-            override fun onOrientationChanged(orientation: Int) {
-                if (orientation == UNKNOWN_ORIENTATION) {
-                    return
-                }
-                imageAnalysis.targetRotation = when (orientation) {
-                    in 45 until 135 -> Surface.ROTATION_270
-                    in 135 until 225 -> Surface.ROTATION_180
-                    in 225 until 315 -> Surface.ROTATION_90
-                    else -> Surface.ROTATION_0
-                }
-            }
-        }
-         orientationEventListener.enable()
+        messageSnackbar.showMessage(requireActivity(), "Center phone to desired part")
     }
 
     override fun onResume() {
@@ -124,7 +111,7 @@ class CameraFragment: Fragment() {
     override fun onStop() {
         super.onStop()
         stopCamera()
-//        orientationEventListener.disable()
+        messageSnackbar.hide(requireActivity())
     }
 
     private fun startCamera() {
@@ -160,17 +147,21 @@ class CameraFragment: Fragment() {
     }
 
     private fun buildPreviewUseCase(): Preview {
-        return Preview.Builder().build()
+        return Preview.Builder()
+            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            .build()
     }
 
     private fun buildImageAnalysisCase(): ImageAnalysis {
         return ImageAnalysis.Builder()
+            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build().also{ analysisUseCase: ImageAnalysis ->
             // the parameter in setAnalyzer is the value returned from the analyze() function
             //   the custom analyzer class specified
             analysisUseCase.setAnalyzer(cameraExecutor, ComponentAnalyzer(requireContext()){ result: Prediction ->
                 // data will be automatically shown in the view
+                predictionResult = result.label
                 predictViewModel.updateData(result)
             })
         }

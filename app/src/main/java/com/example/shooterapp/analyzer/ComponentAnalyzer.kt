@@ -3,14 +3,15 @@ package com.example.shooterapp.analyzer
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
+import android.graphics.Color.rgb
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.example.shooterapp.util.Label
 import com.example.shooterapp.util.Prediction
 import org.tensorflow.lite.support.image.TensorImage
 import java.io.ByteArrayOutputStream
@@ -31,6 +32,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
 typealias  ResultListener = (Prediction) -> Unit
 
@@ -58,7 +60,7 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
     }
 
     private var lastTimeStamp: Long = 0L
-    private val interval = TimeUnit.MILLISECONDS.toMillis(5000)
+    private val interval = TimeUnit.MILLISECONDS.toMillis(3000)
 
     private val ctx = ctx
 
@@ -74,8 +76,8 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
                 image.close()
                 return
             }
-
-            saveMediaToStorage(bmImg)
+            // DEBUG
+//             saveMediaToStorage(bmImg)
 
             val cropSize = if (bmImg.width >= bmImg.height)
                 bmImg.height
@@ -84,13 +86,39 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
 
             // prepare dimensions of input image to square-like dimensions
             // size of input required for model is 150x150
-            val imageProcessor = ImageProcessor.Builder()
+            val imageCropProcessor = ImageProcessor.Builder()
                 .add(ResizeWithCropOrPadOp(cropSize, cropSize))
+                .build()
+
+            val imageResizeHalfProcessor = ImageProcessor.Builder()
+                .add(ResizeOp(cropSize/2, cropSize/2, ResizeOp.ResizeMethod.BILINEAR))
+                .build()
+
+            val imageResizeTargetProcessor = ImageProcessor.Builder()
                 .add(ResizeOp(150, 150, ResizeOp.ResizeMethod.BILINEAR))
                 .build()
+
             var tImage = TensorImage(DataType.FLOAT32)
+//            var tImage_debug = TensorImage(DataType.FLOAT32)
             tImage.load(bmImg)
-            tImage = imageProcessor.process(tImage)
+
+            tImage = imageCropProcessor.process(tImage)
+            // DEBUG
+//            saveMediaToStorage(tImage.bitmap)
+
+            tImage = imageResizeHalfProcessor.process(tImage)
+            // DEBUG
+//            saveMediaToStorage(tImage.bitmap)
+
+            tImage = imageResizeTargetProcessor.process(tImage)
+            // DEBUG
+//            saveMediaToStorage(tImage.bitmap)
+//
+//            tImage_debug.load(bmImg)
+//            tImage_debug = imageCropProcessor.process(tImage_debug)
+//            tImage_debug = imageResizeTargetProcessor.process(tImage_debug)
+//            // DEBUG
+//            saveMediaToStorage(tImage_debug.bitmap)
 
             val probabilityProcessor = TensorProcessor.Builder()
                 .add(NormalizeOp(0f, 255f))
@@ -109,7 +137,13 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
                 return
             }
 
-            val result = Prediction(prediction.key, prediction.value)
+            val name_display = when (prediction.key.toString()) {
+                "cpu" -> "CPU"
+                "hdrive" -> "Hard Disk Drive"
+                "mboard" -> "Motherboard"
+                else -> "Power Supply"
+            }
+            val result = Prediction(Label(name_display, prediction.key), prediction.value)
 
             listener(result)
 
