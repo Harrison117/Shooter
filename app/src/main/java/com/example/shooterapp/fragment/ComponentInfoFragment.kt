@@ -62,6 +62,10 @@ class ComponentInfoFragment : BottomSheetDialogFragment() {
 
         componentNameTextView.text = args.componentDisplay
         when(args.component) {
+            "ram" -> {
+                componentDescTextView.text = getString(R.string.ram_component_desc)
+                componentProbTextView.text = getString(R.string.ram_component_prob)
+            }
             "power" -> {
                 componentDescTextView.text = getString(R.string.power_component_desc)
                 componentProbTextView.text = getString(R.string.power_component_prob)

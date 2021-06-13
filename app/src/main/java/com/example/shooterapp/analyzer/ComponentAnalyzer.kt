@@ -36,9 +36,9 @@ import kotlin.math.roundToInt
 
 typealias  ResultListener = (Prediction) -> Unit
 
-class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : ImageAnalysis.Analyzer {
+class ComponentAnalyzer(private val ctx: Context, private val listener: ResultListener) : ImageAnalysis.Analyzer {
 
-    private val labelList = arrayListOf("power","mboard","hdrive","cpu")
+    private val labelList = arrayListOf("ram","power","mboard","hdrive","cpu")
 
     private val yuvToRgbConverter = YuvToRgbConverter()
 
@@ -61,8 +61,6 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
 
     private var lastTimeStamp: Long = 0L
     private val interval = TimeUnit.MILLISECONDS.toMillis(3000)
-
-    private val ctx = ctx
 
     override fun analyze(image: ImageProxy) {
         // analyze an image every after one second
@@ -141,7 +139,8 @@ class ComponentAnalyzer(ctx: Context, private val listener: ResultListener) : Im
                 "cpu" -> "CPU"
                 "hdrive" -> "Hard Disk Drive"
                 "mboard" -> "Motherboard"
-                else -> "Power Supply"
+                "power" -> "Power Supply"
+                else -> "Random Access Memory"
             }
             val result = Prediction(Label(name_display, prediction.key), prediction.value)
 
